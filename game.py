@@ -9,7 +9,7 @@ curses.noecho()
 curses.cbreak(True)
 curses.curs_set(False)
 
-win = curses.newwin(20, 40, 0, 0)
+win = curses.newwin(20, 40, 2, 2)
 win.keypad(True)
 
 win.clear()
@@ -43,9 +43,27 @@ while True:
 
     win.nodelay(True)
 
+    paused = False
+
+    win.hline(19, 17, " ", 6)
+    win.addstr(19, 18, "PLAY")
+
     while True:
         if snake[-1] in snake[:-1]:
             break
+
+        user_input = win.getch()
+        if user_input == 27:
+            break
+
+        if user_input == 32:
+            if paused == True:
+                paused = False
+                win.hline(19, 17, " ", 6)
+                win.addstr(19, 18, "PLAY")
+            else:
+                paused = True
+                win.addstr(19, 17, "PAUSED")
 
         win.addstr(0, 1, "Score: " + str((len(snake) - 3) * 10))
 
@@ -54,52 +72,49 @@ while True:
         if (len(snake) - 3) * 10 > highscore: highscore = (len(snake) - 3) * 10
         win.addstr(0, 20, "Highscore: " + str(highscore))
 
-        user_input = win.getch()
-        if user_input == 27:
-            break
+        if not paused:
+            if (user_input == curses.KEY_RIGHT and key != curses.KEY_LEFT) or (user_input == curses.KEY_LEFT and key != curses.KEY_RIGHT) or (user_input == curses.KEY_UP and key != curses.KEY_DOWN) or (user_input == curses.KEY_DOWN and key != curses.KEY_UP):
+                key = user_input
 
-        if user_input == curses.KEY_RIGHT or user_input == curses.KEY_LEFT or user_input == curses.KEY_UP or user_input == curses.KEY_DOWN:
-            key = user_input
+            if key == curses.KEY_RIGHT:
+                snake.append([snake[-1][0] + 1, snake[-1][1]])
 
-        if key == curses.KEY_RIGHT:
-            snake.append([snake[-1][0] + 1, snake[-1][1]])
+            if key == curses.KEY_LEFT:
+                snake.append([snake[-1][0] - 1, snake[-1][1]])
+            
+            if key == curses.KEY_UP:
+                snake.append([snake[-1][0], snake[-1][1] - 1])
+            
+            if key == curses.KEY_DOWN:
+                snake.append([snake[-1][0], snake[-1][1] + 1])
 
-        if key == curses.KEY_LEFT:
-            snake.append([snake[-1][0] - 1, snake[-1][1]])
-        
-        if key == curses.KEY_UP:
-            snake.append([snake[-1][0], snake[-1][1] - 1])
-        
-        if key == curses.KEY_DOWN:
-            snake.append([snake[-1][0], snake[-1][1] + 1])
+            if snake[-1][0] > 38:
+                snake[-1][0] = 1
+            
+            if snake[-1][0] < 1:
+                snake[-1][0] = 38
 
-        if snake[-1][0] > 38:
-            snake[-1][0] = 1
-        
-        if snake[-1][0] < 1:
-            snake[-1][0] = 38
+            if snake[-1][1] > 18:
+                snake[-1][1] = 1
+            
+            if snake[-1][1] < 1:
+                snake[-1][1] = 18
 
-        if snake[-1][1] > 18:
-            snake[-1][1] = 1
-        
-        if snake[-1][1] < 1:
-            snake[-1][1] = 18
+            if snake[-1] not in food:
+                win.addch(snake[0][1], snake[0][0], " ")
+                snake.pop(0)
+            
+            else:
+                food.pop()
+                food.append([random.randint(1, 38), random.randint(1, 18)])
 
-        if snake[-1] not in food:
-            win.addch(snake[0][1], snake[0][0], " ")
-            snake.pop(0)
-        
-        else:
-            food.pop()
-            food.append([random.randint(1, 38), random.randint(1, 18)])
+            for segment in snake:
+                win.addch(segment[1], segment[0], "O")
 
-        for segment in snake:
-            win.addch(segment[1], segment[0], "#")
+            for f in food:
+                win.addch(f[1], f[0], "#")
 
-        for f in food:
-            win.addch(f[1], f[0], "!")
-
-        win.refresh()
+            win.refresh()
         time.sleep(timeout)
 
     with open("highscores.txt", "w+") as file:
